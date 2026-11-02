@@ -135,8 +135,6 @@ export class GameScene extends Phaser.Scene {
     this.#gameOver = true;
     this.#timeEvent.remove();
     this.add.text(this.scale.width /2, this.scale.height /2, 'Game Over', textConfig).setOrigin(0.5);
-    this.input.once(Phaser.Input.Events.POINTER_DOWN,() => {
-      this.scene.restart
-    })
+    this.input.once(Phaser.Input.Events.POINTER_DOWN, () => {this.scene.restart()});
   }
 }
