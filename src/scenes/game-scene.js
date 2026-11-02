@@ -2,6 +2,10 @@ import Phaser from '../lib/phaser.js';
 import { SCENE_KEYS } from '../common/scene-keys.js';
 import { ASSET_KEYS } from '../common/assets.js';
 
+const textConfig = {
+      fontSize: '32px',
+      color: '#000',
+    }
 export class GameScene extends Phaser.Scene {
   /** @type {Phaser.Types.Input.Keyboard.CursorKeys} */
   // @ts-ignore
@@ -64,11 +68,6 @@ export class GameScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
-
-    const textConfig = {
-      fontSize: '32px',
-      color: '#000',
-    }
     const scoreTextPrefix = this.add.text(10, 10, 'Score: ', textConfig); 
 
     this.#scoreTextGameObject = this.add.text(scoreTextPrefix.x + scoreTextPrefix.width, scoreTextPrefix.y, `${this.#score}`, textConfig).setOrigin(0, 0);
@@ -135,6 +134,9 @@ export class GameScene extends Phaser.Scene {
   #handleGameOver() {
     this.#gameOver = true;
     this.#timeEvent.remove();
+    this.add.text(this.scale.width /2, this.scale.height /2, 'Game Over', textConfig).setOrigin(0.5);
+    this.input.once(Phaser.Input.Events.POINTER_DOWN,() => {
+      this.scene.restart
+    })
   }
-
 }
