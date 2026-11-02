@@ -11,6 +11,9 @@ export class GameScene extends Phaser.Scene {
   #player;
   // @ts-ignore
   #playerSpeed;
+  #fallingObjectFrames;
+  #fallingObject;
+  #fallingObjectSpeed;
 
   constructor() {
     super({
@@ -20,6 +23,7 @@ export class GameScene extends Phaser.Scene {
 
   init() {
     this.#playerSpeed = 500;
+    this.#fallingObjectSpeed = 200;
   }
 
   /**
@@ -33,13 +37,24 @@ export class GameScene extends Phaser.Scene {
     // add game background
     this.add.image(this.scale.width / 2, this.scale.height / 2, ASSET_KEYS.BACKGROUND);
 
-    this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR);
+    this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR).setDepth(1);
 
-    this.add.image(width/2, height/2, ASSET_KEYS.OBJECTS);
-    this.add.image(width/2, height/3, ASSET_KEYS.OBJECTS, "button2.png").setScale(2);
+    
+    // this.add.image(width/2, height/3, ASSET_KEYS.OBJECTS, "button2.png").setScale(2);
 
     // @ts-ignore
     this.#cursorKeys = this.input.keyboard.createCursorKeys();
+    
+    this.#fallingObject = [];
+
+    this.#fallingObjectFrames = Object.keys(this.textures.get(ASSET_KEYS.OBJECTS).frames).filter((name) => name != '__BASE');
+    
+    this.time.addEvent({
+      delay: 1000,
+      callback: this.#spawnFallObject,
+      callbackScope: this,
+      loop: true,
+    });
   }
 
   update(time, delta) {
@@ -56,5 +71,28 @@ export class GameScene extends Phaser.Scene {
     } else if (this.#player.x + this.#player.width/2 > this.scale.width) {
       this.#player.x = this.scale.width - this.#player.width/2;
     }
+
+    for(let i = this.#fallingObject.length - 1; i >= 0; i--) {
+      const obj = this.#fallingObject[i];
+      obj.y += (delta / 1000) * this.#fallingObjectSpeed;
+
+      if (obj.y > this.scale.height) {
+        obj.destroy();
+        this.#fallingObject.splice(i, 1);
+      }
+    }
+
   }
+
+  #spawnFallObject() {
+    const randomFrame = Phaser.Utils.Array.GetRandom(this.#fallingObjectFrames);
+    const obj = this.add.image(
+      Phaser.Math.RND.between(0, this.scale.width - 50),
+      0,
+      ASSET_KEYS.OBJECTS,
+      randomFrame
+    );
+    this.#fallingObject.push(obj);
+  }
+
 }
