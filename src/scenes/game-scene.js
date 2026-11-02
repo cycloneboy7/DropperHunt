@@ -14,6 +14,12 @@ export class GameScene extends Phaser.Scene {
   #fallingObjectFrames;
   #fallingObject;
   #fallingObjectSpeed;
+  #score;
+  #scoreTextGameObject;
+  #misses
+  #maxMisses
+  #gameOver
+  #timeEvent
 
   constructor() {
     super({
@@ -24,6 +30,10 @@ export class GameScene extends Phaser.Scene {
   init() {
     this.#playerSpeed = 500;
     this.#fallingObjectSpeed = 200;
+    this.#score = 1;
+    this.#misses = 0;
+    this.#maxMisses = 3;
+    this.#gameOver = false;
   }
 
   /**
@@ -41,7 +51,6 @@ export class GameScene extends Phaser.Scene {
 
     
     // this.add.image(width/2, height/3, ASSET_KEYS.OBJECTS, "button2.png").setScale(2);
-
     // @ts-ignore
     this.#cursorKeys = this.input.keyboard.createCursorKeys();
     
@@ -49,15 +58,26 @@ export class GameScene extends Phaser.Scene {
 
     this.#fallingObjectFrames = Object.keys(this.textures.get(ASSET_KEYS.OBJECTS).frames).filter((name) => name != '__BASE');
     
-    this.time.addEvent({
+    this.#timeEvent = this.time.addEvent({
       delay: 1000,
       callback: this.#spawnFallObject,
       callbackScope: this,
       loop: true,
     });
+
+    const textConfig = {
+      fontSize: '32px',
+      color: '#000',
+    }
+    const scoreTextPrefix = this.add.text(10, 10, 'Score: ', textConfig); 
+
+    this.#scoreTextGameObject = this.add.text(scoreTextPrefix.x + scoreTextPrefix.width, scoreTextPrefix.y, `${this.#score}`, textConfig).setOrigin(0, 0);
   }
 
   update(time, delta) {
+    if (this.#gameOver) {
+      return;
+    }
     console.log(time, delta);
     const movStep = (delta / 1000) * this.#playerSpeed;
     if (this.#cursorKeys.left.isDown) {
@@ -75,13 +95,30 @@ export class GameScene extends Phaser.Scene {
     for(let i = this.#fallingObject.length - 1; i >= 0; i--) {
       const obj = this.#fallingObject[i];
       obj.y += (delta / 1000) * this.#fallingObjectSpeed;
+      
+      const overLapPoints = Phaser.Geom.Intersects.GetRectangleToRectangle(
+        this.#player.getBounds(),
+        obj.getBounds()
+      );
+
+      if(overLapPoints.length > 0) {
+        obj.destroy();
+        this.#fallingObject.splice(i, 1);
+        this.#score += 1;
+        this.#scoreTextGameObject.setText(`${this.#score}`);
+      }
 
       if (obj.y > this.scale.height) {
         obj.destroy();
         this.#fallingObject.splice(i, 1);
+        this.#misses += 1;
+        this.#scoreTextGameObject.setText(`${this.#score}`);
       }
     }
 
+    if (this.#misses >= this.#maxMisses && !this.#gameOver) {
+      this.#handleGameOver();
+    }
   }
 
   #spawnFallObject() {
@@ -93,6 +130,11 @@ export class GameScene extends Phaser.Scene {
       randomFrame
     );
     this.#fallingObject.push(obj);
+  }
+
+  #handleGameOver() {
+    this.#gameOver = true;
+    this.#timeEvent.remove();
   }
 
 }
