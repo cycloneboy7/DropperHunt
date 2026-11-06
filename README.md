@@ -1,5 +1,6 @@
-# Dropper Hunt
+# Dropper Hunt (In Development )
 
+**Read ME file is not yet full Upto date with Developement**
 **Dropper Hunt** is a 2D identity-hunting arcade game built with **JavaScript and Phaser 3**.
 
 The player controls a collector at the bottom of the screen and catches falling objects to identify a target character named Alex. Players must distinguish correct identity clues from distractors while managing their score and remaining lives.
