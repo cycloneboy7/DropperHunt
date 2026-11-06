@@ -4,9 +4,19 @@ import { ASSET_KEYS } from '../common/assets.js';
 import { CHARACTER } from '../common/character-date.js'
 
 const textConfig = {
-      fontSize: '32px',
-      color: '#000',
-    }
+  fontFamily: 'Arial, sans-serif',
+  fontSize: '28px',
+  fontStyle: 'bold',
+  color: '#ffffff',
+};
+
+const labelConfig = {
+  fontFamily: 'Arial, sans-serif',
+  fontSize: '13px',
+  fontStyle: 'bold',
+  color: '#b9a9e8',
+};
+
 export class GameScene extends Phaser.Scene {
   /** @type {Phaser.Types.Input.Keyboard.CursorKeys} */
   // @ts-ignore
@@ -21,18 +31,17 @@ export class GameScene extends Phaser.Scene {
   #fallingObjectSpeed;
   #score;
   #scoreTextGameObject;
-  #misses
-  #maxMisses
-  #gameOver
-  #timeEvent
-  #lives;
+  #misses;
+  #maxMisses;
+  #gameOver;
+  #timeEvent;
   #collected;
   #livesText;
   #progressText;
-  #statusText;
+  #progressBar;
+  #restartButton;
   #character;
   #identityItems;
-  
 
 
   constructor() {
@@ -48,7 +57,6 @@ export class GameScene extends Phaser.Scene {
     this.#fallingObject = [];
 
     this.#score = 0;
-    this.#lives = 3;
 
     this.#misses = 0;
     this.#maxMisses = 3;
@@ -78,15 +86,13 @@ export class GameScene extends Phaser.Scene {
 
     this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR).setDepth(1);
 
-    
-    // this.add.image(width/2, height/3, ASSET_KEYS.OBJECTS, "button2.png").setScale(2);
     // @ts-ignore
     this.#cursorKeys = this.input.keyboard.createCursorKeys();
-    
+
     this.#fallingObject = [];
 
-    this.#fallingObjectFrames = Object.keys(this.textures.get(ASSET_KEYS.OBJECTS).frames).filter((name) => name != '__BASE');
-    
+    this.#fallingObjectFrames = Object.keys(this.textures.get(ASSET_KEYS.OBJECTS).frames).filter((name) => name !== '__BASE');
+
     this.#timeEvent = this.time.addEvent({
       delay: 1000,
       callback: this.#spawnFallObject,
@@ -94,31 +100,14 @@ export class GameScene extends Phaser.Scene {
       loop: true,
     });
 
-    const scoreTextPrefix = this.add.text(10, 10, 'Score: ', textConfig); 
-    this.#scoreTextGameObject = this.add.text(scoreTextPrefix.x + scoreTextPrefix.width, scoreTextPrefix.y, `${this.#score}`, textConfig).setOrigin(0, 0);
-
-    this.#livesText = this.add.text(
-      this.scale.width - 150,
-      15,
-      'Lives: 3',
-      {
-        fontSize: '22px',
-        color: '#ff7777'
-      }
-    );
-    const progressText = this.add.text(10,55,'Identities: ',textConfig);
-    //this.#progressText = this.add.text(10,55,'Identities: ',textConfig);
-    this.#progressText = this.add.text(progressText.x + progressText.width, progressText.y, `${this.#collected.size}/${this.#identityItems.length}`, textConfig).setOrigin(0,0);
-    this.#livesText.setText(`Lives: ${this.#maxMisses - this.#misses}`);
-    
-
+    this.#createHud();
+    this.#updateHud();
   }
 
   update(time, delta) {
     if (this.#gameOver) {
       return;
     }
-    console.log(time, delta);
     const movStep = (delta / 1000) * this.#playerSpeed;
     if (this.#cursorKeys.left.isDown) {
       this.#player.x -= movStep;
@@ -141,18 +130,25 @@ export class GameScene extends Phaser.Scene {
         obj.getBounds()
       );
 
-      if(overLapPoints.length > 0) {
+      if (overLapPoints.length > 0) {
+        const identity = obj.getData('identity');
         obj.destroy();
         this.#fallingObject.splice(i, 1);
         this.#score += 1;
-        this.#scoreTextGameObject.setText(`${this.#score}`);
+
+        if (identity.correct) {
+          this.#collected.add(identity.id);
+        }
+
+        this.#updateHud();
+        continue;
       }
 
       if (obj.y > this.scale.height) {
         obj.destroy();
         this.#fallingObject.splice(i, 1);
         this.#misses += 1;
-        this.#scoreTextGameObject.setText(`${this.#score}`);
+        this.#updateHud();
       }
     }
 
@@ -169,21 +165,82 @@ export class GameScene extends Phaser.Scene {
       0,
       item.label,
       {
-        fontFamily: 'Arial',
-        fontSize: '23px',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '22px',
         fontStyle: 'bold',
-        color: '#ffffff',
-        backgroundColor: '#352078',
+        color: item.correct ? '#f3edff' : '#f1f0f7',
+        backgroundColor: item.correct ? '#6540b5' : '#3a3b57',
         padding: {
-          x: 12,
-          y: 8,
+          x: 14,
+          y: 9,
         },
       }
     );
-    obj.setOrigin(0.5)
+    obj.setOrigin(0.5);
 
-    obj.setData('identity',item);
+    obj.setData('identity', item);
     this.#fallingObject.push(obj);
+  }
+
+  #createHud() {
+    const { width } = this.scale;
+    const hudY = 22;
+    const cardHeight = 76;
+    const cardStyle = { fillColor: 0x211943, fillAlpha: 0.92 };
+    const addCard = (x, cardWidth) => this.add.rectangle(x, hudY, cardWidth, cardHeight, cardStyle.fillColor, cardStyle.fillAlpha)
+      .setOrigin(0, 0)
+      .setStrokeStyle(1, 0x654e9c, 0.8)
+      .setDepth(2);
+
+    addCard(24, 176);
+    addCard(214, 410);
+    addCard(638, 176);
+
+    this.add.text(44, 34, 'SCORE', labelConfig).setDepth(3);
+    this.#scoreTextGameObject = this.add.text(44, 52, '0', textConfig).setDepth(3);
+
+    this.add.text(238, 32, 'IDENTITIES FOUND', labelConfig).setDepth(3);
+    this.#progressText = this.add.text(590, 30, '', {
+      ...labelConfig,
+      fontSize: '16px',
+      color: '#ffffff',
+    }).setOrigin(1, 0).setDepth(3);
+    this.add.rectangle(238, 66, 362, 8, 0x453766)
+      .setOrigin(0, 0)
+      .setDepth(3);
+    this.#progressBar = this.add.rectangle(238, 66, 362, 8, 0xb58cff)
+      .setOrigin(0, 0)
+      .setDepth(4);
+
+    this.add.text(660, 34, 'LIVES', labelConfig).setDepth(3);
+    this.#livesText = this.add.text(660, 52, '', {
+      ...textConfig,
+      fontSize: '22px',
+      color: '#ffc6d1',
+    }).setDepth(3);
+
+    this.#restartButton = this.add.text(width - 24, 34, 'RESTART', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '17px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#7047c8',
+      padding: { x: 20, y: 16 },
+    })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(8);
+
+    this.#restartButton.on('pointerover', () => this.#restartButton.setStyle({ backgroundColor: '#8a62df' }));
+    this.#restartButton.on('pointerout', () => this.#restartButton.setStyle({ backgroundColor: '#7047c8' }));
+    this.#restartButton.on('pointerdown', () => this.scene.restart());
+  }
+
+  #updateHud() {
+    this.#scoreTextGameObject.setText(`${this.#score}`);
+    this.#livesText.setText(`${this.#maxMisses - this.#misses} / ${this.#maxMisses}`);
+    this.#progressText.setText(`${this.#collected.size} / ${CHARACTER.identites.length}`);
+    this.#progressBar.setScale(this.#collected.size / CHARACTER.identites.length, 1);
   }
 
   #createAbstractBackground() {
@@ -224,8 +281,24 @@ export class GameScene extends Phaser.Scene {
   #handleGameOver() {
     this.#gameOver = true;
     this.#timeEvent.remove();
-    this.add.text(this.scale.width /2, this.scale.height /2, 'Game Over', textConfig).setOrigin(0.5);
-    this.input.once(Phaser.Input.Events.POINTER_DOWN, () => {this.scene.restart()});
+    const { width, height } = this.scale;
+    this.add.rectangle(width / 2, height / 2, width, height, 0x0b0815, 0.72).setDepth(5);
+    this.add.rectangle(width / 2, height / 2, 500, 220, 0x211943, 0.98)
+      .setStrokeStyle(2, 0x8c6bd0)
+      .setDepth(6);
+    this.add.text(width / 2, height / 2 - 48, 'GAME OVER', {
+      ...textConfig,
+      fontSize: '32px',
+    }).setOrigin(0.5).setDepth(7);
+    this.add.text(width / 2, height / 2 + 4, `Score: ${this.#score}    Identities: ${this.#collected.size} / ${CHARACTER.identites.length}`, {
+      ...labelConfig,
+      fontSize: '18px',
+      color: '#e6ddfa',
+    }).setOrigin(0.5).setDepth(7);
+    this.add.text(width / 2, height / 2 + 48, 'Press RESTART to play again', {
+      ...labelConfig,
+      fontSize: '15px',
+    }).setOrigin(0.5).setDepth(7);
   }
 
 
