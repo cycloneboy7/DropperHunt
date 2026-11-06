@@ -1,6 +1,6 @@
 # Dropper Hunt (In Development )
 
-**Read ME file is not yet full Upto date with Developement**
+**Read ME file is not yet full Upto date with Developement**.
 **Dropper Hunt** is a 2D identity-hunting arcade game built with **JavaScript and Phaser 3**.
 
 The player controls a collector at the bottom of the screen and catches falling objects to identify a target character named Alex. Players must distinguish correct identity clues from distractors while managing their score and remaining lives.
@@ -54,25 +54,14 @@ Current correct identity:
 
 Distractors include alternative colours and styles of caps, jackets, hair, glasses, and hoodies.
 
-### 4. Scoring System
-
-| Action                         |      Result |
-| ------------------------------ | ----------: |
-| Collect correct identity       |  +10 points |
-| Collect incorrect identity     |   -5 points |
-| Miss a falling object          | Lose 1 life |
-| Collect all correct identities |         Win |
-
-The score cannot go below zero.
-
-### 5. Lives and Progress Tracking
+### 4. Lives and Progress Tracking
 
 - Tracks remaining lives.
 - Tracks collected identity clues.
 - Updates the HUD using the existing `textConfig`.
 - Ends the game when the maximum number of misses is reached.
 
-### 6. Game States
+### 5. Game States
 
 - Active gameplay
 - Game over
