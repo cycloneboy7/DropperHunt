@@ -43,6 +43,8 @@ export class GameScene extends Phaser.Scene {
   #character;
   #identityItems;
 
+  #backgroundCharacter;
+
 
   constructor() {
     super({
@@ -65,7 +67,7 @@ export class GameScene extends Phaser.Scene {
     this.#collected = new Set();
 
     this.#identityItems = [
-      ...CHARACTER.identites,
+      ...CHARACTER.identities,
       ...CHARACTER.distractors
     ]
   }
@@ -82,12 +84,24 @@ export class GameScene extends Phaser.Scene {
     this.add.image(this.scale.width / 2, this.scale.height / 2, ASSET_KEYS.BACKGROUND);
 
     this.#createAbstractBackground();
-    this.#createCharacter();
 
     this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR).setDepth(1);
 
     // @ts-ignore
     this.#cursorKeys = this.input.keyboard.createCursorKeys();
+
+    const randomPose = Phaser.Math.Between(0, 19);
+
+    this.#backgroundCharacter = this.add.sprite(
+      this.scale.width/2,
+      this.scale.height/2,
+      'ALEX_POSES',
+      randomPose
+    )
+    this.#backgroundCharacter.setScale(0.65)
+    this.#backgroundCharacter.setAlpha(0.22)
+    this.#backgroundCharacter.setDepth(0.1)
+
 
     this.#fallingObject = [];
 
@@ -102,6 +116,8 @@ export class GameScene extends Phaser.Scene {
 
     this.#createHud();
     this.#updateHud();
+
+
   }
 
   update(time, delta) {
@@ -160,24 +176,32 @@ export class GameScene extends Phaser.Scene {
   #spawnFallObject() {
     const item = Phaser.Utils.Array.GetRandom(this.#identityItems);
     const x = Phaser.Math.Between(100, this.scale.width - 100)
-    const obj = this.add.text(
-      x,
-      0,
-      item.label,
-      {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '22px',
-        fontStyle: 'bold',
-        color: item.correct ? '#f3edff' : '#f1f0f7',
-        backgroundColor: item.correct ? '#6540b5' : '#3a3b57',
-        padding: {
-          x: 14,
-          y: 9,
-        },
-      }
-    );
-    obj.setOrigin(0.5);
+    const showImage = Phaser.Math.Between(0,1) === 1;
 
+    let obj;
+
+    if (showImage) {
+      obj = this.add.image(
+        x,
+        0,
+        ASSET_KEYS.OBJECTS,
+        item.frame
+      ).setScale(0.5).setOrigin(0.5);
+    } else {
+      obj = this.add.text(
+        x,
+        0,
+        item.label,
+        {
+          ...textConfig,
+          fontSize: '22px',
+          fontStyle: 'bold',
+          color: '#ffffff',
+          backgroundColor: '#352078',
+          padding: { x: 10, y: 8 },
+        }
+      ).setOrigin(0.5);
+    }
     obj.setData('identity', item);
     this.#fallingObject.push(obj);
   }
@@ -239,8 +263,8 @@ export class GameScene extends Phaser.Scene {
   #updateHud() {
     this.#scoreTextGameObject.setText(`${this.#score}`);
     this.#livesText.setText(`${this.#maxMisses - this.#misses} / ${this.#maxMisses}`);
-    this.#progressText.setText(`${this.#collected.size} / ${CHARACTER.identites.length}`);
-    this.#progressBar.setScale(this.#collected.size / CHARACTER.identites.length, 1);
+    this.#progressText.setText(`${this.#collected.size} / ${CHARACTER.identities.length}`);
+    this.#progressBar.setScale(this.#collected.size / CHARACTER.identities.length, 1);
   }
 
   #createAbstractBackground() {
@@ -290,7 +314,7 @@ export class GameScene extends Phaser.Scene {
       ...textConfig,
       fontSize: '32px',
     }).setOrigin(0.5).setDepth(7);
-    this.add.text(width / 2, height / 2 + 4, `Score: ${this.#score}    Identities: ${this.#collected.size} / ${CHARACTER.identites.length}`, {
+    this.add.text(width / 2, height / 2 + 4, `Score: ${this.#score}    Identities: ${this.#collected.size} / ${CHARACTER.identities.length}`, {
       ...labelConfig,
       fontSize: '18px',
       color: '#e6ddfa',
@@ -299,34 +323,5 @@ export class GameScene extends Phaser.Scene {
       ...labelConfig,
       fontSize: '15px',
     }).setOrigin(0.5).setDepth(7);
-  }
-
-
-  #createCharacter() {
-    const { width, height } = this.scale;
-    this.#character = this.add.text(
-      width / 2,
-      height / 2 - 80,
-      '🧑🏻‍🦱',
-      {
-        fontSize: '220px',
-      }
-    );
-
-    this.#character.setOrigin(0.5);
-
-    // Ghost appearance
-    this.#character.setAlpha(0.18);
-    this.#character.setDepth(0);
-
-    // Floating animation
-    this.tweens.add({
-      targets: this.#character,
-      y: this.#character.y - 15,
-      duration: 2500,
-      ease: 'Sine.easeInOut',
-      yoyo: true,
-      repeat: -1,
-    });
   }
 }

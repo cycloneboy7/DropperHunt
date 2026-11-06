@@ -16,6 +16,14 @@ export class PreloadScene extends Phaser.Scene {
     TEXTURE_ATLAS_ASSETS.forEach((asset) => {
       this.load.atlas(asset.assetKey, asset.textureURL, asset.atlasURL);
     });
+    this.load.spritesheet(
+      'ALEX_POSES',
+      'assets/images/bgchar.png',
+      {
+        frameWidth: 460,
+        frameHeight: 464
+      }
+    )
   }
 
   create() {
